@@ -72,7 +72,7 @@ func pullContainer(c *gin.Context) {
 func main() {
     router := gin.Default()
     router.POST("/update", pullContainer)
-    router.Run("localhost:8080")
+    router.Run("localhost:8081")
 }
 
 
