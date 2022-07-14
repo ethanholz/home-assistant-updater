@@ -12,15 +12,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func pullContainer(c *gin.Context) {
-	// Accepts and run
+func backgroundPull() {
 	imageName := "ghcr.io/home-assistant/home-assistant:stable"
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		panic(err)
 	}
-	c.JSON(http.StatusAccepted, nil)
 	fmt.Println("Imported context")
 	// Pull updated image
 	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
@@ -30,6 +28,12 @@ func pullContainer(c *gin.Context) {
 	fmt.Println("Pulled image")
 	defer out.Close()
 	io.Copy(os.Stdout, out)
+}
+
+func pullContainer(c *gin.Context) {
+	// Accepts and run
+	c.JSON(http.StatusAccepted, nil)
+	go backgroundPull()
 }
 
 func main() {
