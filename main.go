@@ -8,6 +8,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"regexp"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -17,7 +19,9 @@ import (
 // Posts update to Home Assistant Entity
 func postUpdate() {
 	endpoint := "http://localhost:8123/api/services/input_boolean/turn_on"
+	// Set using an environment variables
 	auth_token := os.Getenv("HASS_TOKEN")
+	// Maybe setup to restart one day?
 	object := map[string]string{"entity_id": "input_boolean.update"}
 	jsonValue, err := json.Marshal(object)
 	if err != nil {
@@ -54,10 +58,17 @@ func backgroundPull() {
 	if err != nil {
 		panic(err)
 	}
+	buf := new(strings.Builder)
 	fmt.Println("Pulled image")
 	defer out.Close()
-	io.Copy(os.Stdout, out)
-	go postUpdate()
+	_, err = io.Copy(buf, out)
+	if err != nil {
+		panic(err)
+	}
+	match, _ := regexp.MatchString("Status: Downloaded newer image", buf.String())
+	if match {
+		go postUpdate()
+	}
 }
 
 func pullContainer(c *gin.Context) {
