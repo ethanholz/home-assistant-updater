@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"regexp"
@@ -25,22 +25,28 @@ func postUpdate() {
 	object := map[string]string{"entity_id": "input_boolean.update"}
 	jsonValue, err := json.Marshal(object)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
+		return
 	}
 
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(jsonValue))
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
+		return
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", "Bearer "+auth_token)
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
+		return
 	}
+
+	log.Println("Posted request to HA")
 	if resp.Status != "200 OK" {
-		panic("Failed to make request")
+		log.Fatal("Failed to make request to HA")
+		return
 	}
 
 }
@@ -50,21 +56,25 @@ func backgroundPull() {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
+		return
 	}
-	fmt.Println("Imported context")
+
+	log.Println("Imported context")
 	// Pull updated image
 	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 	if err != nil {
 		panic(err)
 	}
 	buf := new(strings.Builder)
-	fmt.Println("Pulled image")
+	log.Println("Pulled image")
 	defer out.Close()
 	_, err = io.Copy(buf, out)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
+		return
 	}
+
 	match, _ := regexp.MatchString("Status: Downloaded newer image", buf.String())
 	if match {
 		go postUpdate()
