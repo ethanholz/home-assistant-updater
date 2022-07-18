@@ -67,7 +67,6 @@ func backgroundPull() {
 		panic(err)
 	}
 	buf := new(strings.Builder)
-	log.Println("Pulled image")
 	defer out.Close()
 	_, err = io.Copy(buf, out)
 	if err != nil {
@@ -77,6 +76,7 @@ func backgroundPull() {
 
 	match, _ := regexp.MatchString("Status: Downloaded newer image", buf.String())
 	if match {
+		log.Println("Pulled new image")
 		go postUpdate()
 	}
 }
